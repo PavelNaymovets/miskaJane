@@ -1,6 +1,6 @@
 <?php
     // запрос на все выполненные упражнения
-    // https://hmns.in/mishkajane/get_all.php?uid=333
+    // https://hmns.in/mishkajane/newVrs/get_all.php?uid=333&stream=5
     // Если пользователя нет в самом начале, или нет вообще, прислать = 0;
     // response: 
     // {
@@ -10,23 +10,38 @@
     // ...
     // }
 
+    /* ОБЪЯВЛЯЮ ПЕРЕМЕННЫЕ */
     $uid;
+    $stream;
+    $tableName;
     $modexCount = [];
-    getUserData($uid);
+    
+    /* ПОЛУЧАЮ ДАННЫЕ ИЗ GET ЗАПРОСА */
+    getUserData($uid, $stream);
+    $tableName = 'users_'.$stream;
+    
+    /* ОТКРЫВАЮ СОЕДИНЕНИЕ С БАЗОЙ */
     $mysql = openConnection();
-    $modexCount = getModexCount($mysql, $uid);
+    
+    /* ПОЛУЧАЮ КОЛИЧЕСТВО ПОВТОРЕНИЙ УПРАЖНЕНИЯ ПОЛЬЗОВАТЕЛЕМ */
+    $modexCount = getModexCount($mysql, $uid, $tableName);
     $json = json_encode($modexCount);
+    
+    /* ВОЗВРАЩАЮ ИНФОРМАЦИЮ НА СТРАНИЦУ */
     echo $json;
+    
+    /* ЗАКРЫВАЮ СОЕДИНЕНИЕ С БАЗОЙ */
     closeConnection($mysql);
     
-    function getUserData(&$uid){
+    function getUserData(&$uid, &$stream){
         $uid = $_GET['uid'];
+        $stream = $_GET['stream'];
     }
     
     function openConnection(){
         $servername = "localhost";
-        $username = "";
-        $password = "";
+        $username = "a0256806_mishkaJane";
+        $password = "5u1edvlA";
         $dbname = "a0256806_mishkaJane";
         
         $mysql = new mysqli($servername, $username, $password, $dbname);
@@ -41,10 +56,10 @@
         $mysql->close();
     }
     
-    function getModexCount(&$mysql, $uid){
-        $checkUser = checkInstanceInDB($mysql, $uid);
+    function getModexCount(&$mysql, $uid, $tableName){
+        $checkUser = checkInstanceInDB($mysql, $uid, $tableName);
         if($checkUser == 1){
-            $modexCount = getModexCountFromDB($mysql ,$uid);
+            $modexCount = getModexCountFromDB($mysql ,$uid, $tableName);
             return [
             'success' => '1',
             'moduleExercise_count' => $modexCount
@@ -56,8 +71,8 @@
         }
     }
     
-    function checkInstanceInDB(&$mysql ,$uid){
-        $sqlSelect = "SELECT uid FROM users WHERE uid = $uid";
+    function checkInstanceInDB(&$mysql ,$uid, $tableName){
+        $sqlSelect = "SELECT uid FROM $tableName WHERE uid = $uid";
         $result = $mysql->query($sqlSelect);
         if($result->num_rows > 0) {
             return 1;
@@ -66,8 +81,8 @@
         }
     }
     
-    function getModexCountFromDB(&$mysql ,$uid){
-        $sqlSelect = "SELECT modex, count FROM users WHERE uid = $uid";
+    function getModexCountFromDB(&$mysql ,$uid, $tableName){
+        $sqlSelect = "SELECT modex, count FROM $tableName WHERE uid = $uid";
         $result = $mysql->query($sqlSelect);
         $modexCount = [];
         while($row = $result->fetch_assoc()) {
